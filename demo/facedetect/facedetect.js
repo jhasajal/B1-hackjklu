@@ -83,11 +83,7 @@ function addFace(face, source) {
   canvas.title = `
     source: ${source}
     score: ${Math.round(100 * face.boxScore)}% detection ${Math.round(100 * face.faceScore)}% analysis
-    age: ${face.age} years | gender: ${face.gender} score ${Math.round(100 * face.genderScore)}%
-    emotion: ${emotion.join(' | ')}
-    head rotation: ${rotation}
-    eyes gaze: ${gaze}
-    camera distance: ${face.distance}m | ${Math.round(100 * face.distance / 2.54)}in
+    emotion: ${emotion.join(' | ')}in
     check: ${Math.round(100 * face.real)}% real ${Math.round(100 * face.live)}% live
   `.replace(/  /g, ' ');
   canvas.onclick = (e) => {

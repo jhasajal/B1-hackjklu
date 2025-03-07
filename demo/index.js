@@ -57,24 +57,23 @@ let userConfig = {
   // body: { enabled: true, modelPath: 'movenet-multipose.json' },
   segmentation: { enabled: false },
   */
-  /*
-  face: { iris: { enabled: false }, emotion: { enabled: false } },
+  face: { iris: { enabled: true }, emotion: { enabled: true } },
   hand: { enabled: false },
   body: { enabled: false },
   gesture: { enabled: false },
-  */
+  
 };
 
 const drawOptions = {
   bufferedOutput: true, // makes draw functions interpolate results between each detection for smoother movement
   drawBoxes: true,
-  drawGaze: true,
+  drawGaze: false,
   drawLabels: true,
   drawGestures: true,
-  drawPolygons: true,
+  drawPolygons: false,
   drawPoints: false,
   fillPolygons: false,
-  useCurves: false,
+  useCurves: true,
   useDepth: true,
 };
 
@@ -136,15 +135,15 @@ const pwa = {
 };
 
 // hints
-const hints = [
-  'for optimal performance disable unused modules',
-  'with modern gpu best backend is webgl otherwise select wasm backend',
-  'you can process images by dragging and dropping them in browser window',
-  'video input can be webcam or any other video source',
-  'check out other demos such as face-matching and face-3d',
-  'you can edit input image or video on-the-fly using filters',
-  'library status messages are logged in browser console',
-];
+// const hints = [
+//   'for optimal performance disable unused modules',
+//   'with modern gpu best backend is webgl otherwise select wasm backend',
+//   'you can process images by dragging and dropping them in browser window',
+//   'video input can be webcam or any other video source',
+//   'check out other demos such as face-matching and face-3d',
+//   'you can edit input image or video on-the-fly using filters',
+//   'library status messages are logged in browser console',
+// ];
 
 // global variables
 const menu = {};
@@ -308,12 +307,7 @@ async function drawResults(input) {
   const backend = result.backend || human.tf.getBackend();
   const gpu = engine.backendInstance ? `gpu: ${(engine.backendInstance.numBytesInGPU ? engine.backendInstance.numBytesInGPU : 0).toLocaleString()} bytes` : '';
   const memory = result.tensors ? `tensors: ${result.tensors.toLocaleString()} in worker` : `system: ${engine.state.numBytes.toLocaleString()} bytes ${gpu} | tensors: ${engine.state.numTensors.toLocaleString()}`;
-  document.getElementById('log').innerHTML = `
-    video: ${ui.camera.name} | facing: ${ui.camera.facing} | screen: ${window.innerWidth} x ${window.innerHeight} camera: ${ui.camera.width} x ${ui.camera.height} ${processing}<br>
-    backend: ${backend} | ${memory}<br>
-    performance: ${str(interpolated.performance)}ms ${fps}<br>
-    ${warning}<br>
-  `;
+ 
   ui.framesDraw++;
   ui.lastFrame = human.now();
   if (ui.buffered) {
@@ -423,19 +417,19 @@ async function setupCamera() {
   return 'camera stream ready';
 }
 
-function initPerfMonitor() {
-  if (!bench) {
-    const gl = null;
-    // cosnt gl = human.tf.engine().backend.gpgpu.gl;
-    // if (!gl) log('bench cannot get tensorflow webgl context');
-    bench = new GLBench(gl, {
-      trackGPU: false, // this is really slow
-      chartHz: 20,
-      chartLen: 20,
-    });
-    bench.begin();
-  }
-}
+// function initPerfMonitor() {
+//   if (!bench) {
+//     const gl = null;
+//     // cosnt gl = human.tf.engine().backend.gpgpu.gl;
+//     // if (!gl) log('bench cannot get tensorflow webgl context');
+//     bench = new GLBench(gl, {
+//       trackGPU: false, // this is really slow
+//       chartHz: 20,
+//       chartLen: 20,
+//     });
+//     bench.begin();
+//   }
+// }
 
 // wrapper for worker.postmessage that creates worker if one does not exist
 function webWorker(input, image, canvas, timestamp) {
@@ -450,10 +444,10 @@ function webWorker(input, image, canvas, timestamp) {
       status();
       if (msg.data.result.performance && msg.data.result.performance.total) ui.detectFPS.push(1000 / msg.data.result.performance.total);
       if (ui.detectFPS.length > ui.maxFPSframes) ui.detectFPS.shift();
-      if (ui.bench) {
-        if (!bench) initPerfMonitor();
-        bench.nextFrame(timestamp);
-      }
+      // if (ui.bench) {
+      //   if (!bench) initPerfMonitor();
+      //   bench.nextFrame(timestamp);
+      // }
       if (document.getElementById('gl-bench')) document.getElementById('gl-bench').style.display = ui.bench ? 'block' : 'none';
       lastDetectedResult = msg.data.result;
 
@@ -515,10 +509,10 @@ function runHumanDetect(input, canvas, timestamp) {
         status();
         if (result.performance && result.performance.total) ui.detectFPS.push(1000 / result.performance.total);
         if (ui.detectFPS.length > ui.maxFPSframes) ui.detectFPS.shift();
-        if (ui.bench) {
-          if (!bench) initPerfMonitor();
-          bench.nextFrame(timestamp);
-        }
+        // if (ui.bench) {
+        //   if (!bench) initPerfMonitor();
+        //   bench.nextFrame(timestamp);
+        // }
         if (document.getElementById('gl-bench')) document.getElementById('gl-bench').style.display = ui.bench ? 'block' : 'none';
         if (result.error) {
           log(result.error);
@@ -660,62 +654,62 @@ function setupMenu() {
   const top = `${document.getElementById('menubar').clientHeight}px`;
 
   menu.display = new Menu(document.body, '', { top, left: x[0] });
-  menu.display.addBool('results tree', ui, 'results', (val) => {
+  menu.display.addBool('results Graphs', ui, 'results', (val) => {
     ui.results = val;
     document.getElementById('results').style.display = ui.results ? 'block' : 'none';
   });
-  menu.display.addBool('perf monitor', ui, 'bench', (val) => ui.bench = val);
-  menu.display.addBool('buffer output', ui, 'buffered', (val) => ui.buffered = val);
-  menu.display.addBool('crop & scale', ui, 'crop', (val) => {
-    ui.crop = val;
-    setupCamera();
-  });
-  menu.display.addBool('camera facing', ui, 'facing', (val) => {
-    ui.facing = val;
-    setupCamera();
-  });
-  menu.display.addHTML('<hr style="border-style: inset; border-color: dimgray">');
-  menu.display.addBool('use depth', drawOptions, 'useDepth');
-  menu.display.addBool('use curves', drawOptions, 'useCurves');
-  menu.display.addBool('print labels', drawOptions, 'drawLabels');
-  menu.display.addBool('draw points', drawOptions, 'drawPoints');
-  menu.display.addBool('draw boxes', drawOptions, 'drawBoxes');
-  menu.display.addBool('draw polygons', drawOptions, 'drawPolygons');
-  menu.display.addBool('fill polygons', drawOptions, 'fillPolygons');
+  // menu.display.addBool('perf monitor', ui, 'bench', (val) => ui.bench = val);
+  // menu.display.addBool('buffer output', ui, 'buffered', (val) => ui.buffered = val);
+  // menu.display.addBool('crop & scale', ui, 'crop', (val) => {
+  //   ui.crop = val;
+  //   setupCamera();
+  // });
+  // menu.display.addBool('camera facing', ui, 'facing', (val) => {
+  //   ui.facing = val;
+  //   setupCamera();
+  // });
+  // menu.display.addHTML('<hr style="border-style: inset; border-color: dimgray">');
+  // menu.display.addBool('use depth', drawOptions, 'useDepth');
+  // menu.display.addBool('use curves', drawOptions, 'useCurves');
+  // menu.display.addBool('print labels', drawOptions, 'drawLabels');
+  // menu.display.addBool('draw points', drawOptions, 'drawPoints');
+  // menu.display.addBool('draw boxes', drawOptions, 'drawBoxes');
+  // menu.display.addBool('draw polygons', drawOptions, 'drawPolygons');
+  // menu.display.addBool('fill polygons', drawOptions, 'fillPolygons');
 
   menu.image = new Menu(document.body, '', { top, left: x[1] });
   menu.image.addBool('enabled', userConfig.filter, 'enabled', (val) => userConfig.filter.enabled = val);
-  menu.image.addBool('histogram equalization', userConfig.filter, 'equalization', (val) => userConfig.filter.equalization = val);
+  // menu.image.addBool('histogram equalization', userConfig.filter, 'equalization', (val) => userConfig.filter.equalization = val);
   ui.menuWidth = menu.image.addRange('image width', userConfig.filter, 'width', 0, 3840, 10, (val) => userConfig.filter.width = parseInt(val));
   ui.menuHeight = menu.image.addRange('image height', userConfig.filter, 'height', 0, 2160, 10, (val) => userConfig.filter.height = parseInt(val));
-  menu.image.addHTML('<hr style="border-style: inset; border-color: dimgray">');
-  menu.image.addRange('brightness', userConfig.filter, 'brightness', -1.0, 1.0, 0.05, (val) => userConfig.filter.brightness = parseFloat(val));
-  menu.image.addRange('contrast', userConfig.filter, 'contrast', -1.0, 1.0, 0.05, (val) => userConfig.filter.contrast = parseFloat(val));
-  menu.image.addRange('sharpness', userConfig.filter, 'sharpness', 0, 1.0, 0.05, (val) => userConfig.filter.sharpness = parseFloat(val));
-  menu.image.addRange('blur', userConfig.filter, 'blur', 0, 20, 1, (val) => userConfig.filter.blur = parseInt(val));
-  menu.image.addRange('saturation', userConfig.filter, 'saturation', -1.0, 1.0, 0.05, (val) => userConfig.filter.saturation = parseFloat(val));
-  menu.image.addRange('hue', userConfig.filter, 'hue', 0, 360, 5, (val) => userConfig.filter.hue = parseInt(val));
-  menu.image.addRange('pixelate', userConfig.filter, 'pixelate', 0, 32, 1, (val) => userConfig.filter.pixelate = parseInt(val));
-  menu.image.addHTML('<hr style="border-style: inset; border-color: dimgray">');
-  menu.image.addBool('negative', userConfig.filter, 'negative', (val) => userConfig.filter.negative = val);
-  menu.image.addBool('sepia', userConfig.filter, 'sepia', (val) => userConfig.filter.sepia = val);
-  menu.image.addBool('vintage', userConfig.filter, 'vintage', (val) => userConfig.filter.vintage = val);
-  menu.image.addBool('kodachrome', userConfig.filter, 'kodachrome', (val) => userConfig.filter.kodachrome = val);
-  menu.image.addBool('technicolor', userConfig.filter, 'technicolor', (val) => userConfig.filter.technicolor = val);
-  menu.image.addBool('polaroid', userConfig.filter, 'polaroid', (val) => userConfig.filter.polaroid = val);
+  // menu.image.addHTML('<hr style="border-style: inset; border-color: dimgray">');
+  // menu.image.addRange('brightness', userConfig.filter, 'brightness', -1.0, 1.0, 0.05, (val) => userConfig.filter.brightness = parseFloat(val));
+  // menu.image.addRange('contrast', userConfig.filter, 'contrast', -1.0, 1.0, 0.05, (val) => userConfig.filter.contrast = parseFloat(val));
+  // menu.image.addRange('sharpness', userConfig.filter, 'sharpness', 0, 1.0, 0.05, (val) => userConfig.filter.sharpness = parseFloat(val));
+  // menu.image.addRange('blur', userConfig.filter, 'blur', 0, 20, 1, (val) => userConfig.filter.blur = parseInt(val));
+  // menu.image.addRange('saturation', userConfig.filter, 'saturation', -1.0, 1.0, 0.05, (val) => userConfig.filter.saturation = parseFloat(val));
+  // menu.image.addRange('hue', userConfig.filter, 'hue', 0, 360, 5, (val) => userConfig.filter.hue = parseInt(val));
+  // menu.image.addRange('pixelate', userConfig.filter, 'pixelate', 0, 32, 1, (val) => userConfig.filter.pixelate = parseInt(val));
+  // menu.image.addHTML('<hr style="border-style: inset; border-color: dimgray">');
+  // menu.image.addBool('negative', userConfig.filter, 'negative', (val) => userConfig.filter.negative = val);
+  // menu.image.addBool('sepia', userConfig.filter, 'sepia', (val) => userConfig.filter.sepia = val);
+  // menu.image.addBool('vintage', userConfig.filter, 'vintage', (val) => userConfig.filter.vintage = val);
+  // menu.image.addBool('kodachrome', userConfig.filter, 'kodachrome', (val) => userConfig.filter.kodachrome = val);
+  // menu.image.addBool('technicolor', userConfig.filter, 'technicolor', (val) => userConfig.filter.technicolor = val);
+  // menu.image.addBool('polaroid', userConfig.filter, 'polaroid', (val) => userConfig.filter.polaroid = val);
   menu.image.addHTML('<input type="file" id="file-input" class="input-file"></input> &nbsp input');
 
   menu.process = new Menu(document.body, '', { top, left: x[2] });
-  menu.process.addList('backend', ['cpu', 'webgl', 'wasm', 'humangl'], userConfig.backend, (val) => userConfig.backend = val);
-  menu.process.addBool('async operations', userConfig, 'async', (val) => userConfig.async = val);
-  menu.process.addBool('use web worker', ui, 'useWorker');
-  menu.process.addHTML('<hr style="border-style: inset; border-color: dimgray">');
-  menu.process.addLabel('model parameters');
-  menu.process.addRange('max objects', userConfig.face.detector, 'maxDetected', 1, 50, 1, (val) => {
-    userConfig.face.detector.maxDetected = parseInt(val);
-    userConfig.body.maxDetected = parseInt(val);
-    userConfig.hand.maxDetected = parseInt(val);
-  });
+  // menu.process.addList('backend', ['cpu', 'webgl', 'wasm', 'humangl'], userConfig.backend, (val) => userConfig.backend = val);
+  // menu.process.addBool('async operations', userConfig, 'async', (val) => userConfig.async = val);
+  // menu.process.addBool('use web worker', ui, 'useWorker');
+  // menu.process.addHTML('<hr style="border-style: inset; border-color: dimgray">');
+  // menu.process.addLabel('model parameters');
+  // menu.process.addRange('max objects', userConfig.face.detector, 'maxDetected', 1, 50, 1, (val) => {
+  //   userConfig.face.detector.maxDetected = parseInt(val);
+  //   userConfig.body.maxDetected = parseInt(val);
+  //   userConfig.hand.maxDetected = parseInt(val);
+  // });
   menu.process.addRange('skip frames', userConfig.face.detector, 'skipFrames', 0, 50, 1, (val) => {
     userConfig.face.detector.skipFrames = parseInt(val);
     userConfig.face.emotion.skipFrames = parseInt(val);
@@ -726,37 +720,37 @@ function setupMenu() {
     userConfig.face.emotion.minConfidence = parseFloat(val);
     userConfig.hand.minConfidence = parseFloat(val);
   });
-  menu.process.addRange('overlap', userConfig.face.detector, 'iouThreshold', 0.1, 1.0, 0.05, (val) => {
-    userConfig.face.detector.iouThreshold = parseFloat(val);
-    userConfig.hand.iouThreshold = parseFloat(val);
-  });
-  menu.process.addBool('rotation detection', userConfig.face.detector, 'rotation', (val) => {
-    userConfig.face.detector.rotation = val;
-    userConfig.hand.rotation = val;
-  });
-  menu.process.addHTML('<hr style="border-style: inset; border-color: dimgray">');
-  // menu.process.addButton('process sample images', 'process images', () => detectSampleImages());
+  // menu.process.addRange('overlap', userConfig.face.detector, 'iouThreshold', 0.1, 1.0, 0.05, (val) => {
+  //   userConfig.face.detector.iouThreshold = parseFloat(val);
+  //   userConfig.hand.iouThreshold = parseFloat(val);
+  // });
+  // menu.process.addBool('rotation detection', userConfig.face.detector, 'rotation', (val) => {
+  //   userConfig.face.detector.rotation = val;
+  //   userConfig.hand.rotation = val;
+  // });
   // menu.process.addHTML('<hr style="border-style: inset; border-color: dimgray">');
-  menu.process.addChart('FPS', 'FPS');
+  // // menu.process.addButton('process sample images', 'process images', () => detectSampleImages());
+  // // menu.process.addHTML('<hr style="border-style: inset; border-color: dimgray">');
+  // menu.process.addChart('FPS', 'FPS');
 
   menu.models = new Menu(document.body, '', { top, left: x[3] });
   menu.models.addBool('face detect', userConfig.face, 'enabled', (val) => userConfig.face.enabled = val);
-  menu.models.addBool('face mesh', userConfig.face.mesh, 'enabled', (val) => userConfig.face.mesh.enabled = val);
-  menu.models.addBool('face iris', userConfig.face.iris, 'enabled', (val) => userConfig.face.iris.enabled = val);
-  menu.models.addBool('face description', userConfig.face.description, 'enabled', (val) => userConfig.face.description.enabled = val);
+  // menu.models.addBool('face mesh', userConfig.face.mesh, 'enabled', (val) => userConfig.face.mesh.enabled = val);
+  // menu.models.addBool('face iris', userConfig.face.iris, 'enabled', (val) => userConfig.face.iris.enabled = val);
+  // menu.models.addBool('face description', userConfig.face.description, 'enabled', (val) => userConfig.face.description.enabled = val);
   menu.models.addBool('face emotion', userConfig.face.emotion, 'enabled', (val) => userConfig.face.emotion.enabled = val);
-  menu.models.addHTML('<hr style="border-style: inset; border-color: dimgray">');
-  menu.models.addBool('body pose', userConfig.body, 'enabled', (val) => userConfig.body.enabled = val);
-  menu.models.addBool('hand pose', userConfig.hand, 'enabled', (val) => userConfig.hand.enabled = val);
-  menu.models.addHTML('<hr style="border-style: inset; border-color: dimgray">');
-  menu.models.addBool('gestures', userConfig.gesture, 'enabled', (val) => userConfig.gesture.enabled = val);
-  menu.models.addHTML('<hr style="border-style: inset; border-color: dimgray">');
-  menu.models.addBool('object detection', userConfig.object, 'enabled', (val) => userConfig.object.enabled = val);
-  menu.models.addHTML('<hr style="border-style: inset; border-color: dimgray">');
-  menu.models.addBool('face compare', compare, 'enabled', (val) => {
-    compare.enabled = val;
-    compare.original = null;
-  });
+  // menu.models.addHTML('<hr style="border-style: inset; border-color: dimgray">');
+  // menu.models.addBool('body pose', userConfig.body, 'disable', (val) => userConfig.body.enabled = false);
+  // menu.models.addBool('hand pose', userConfig.hand, 'disable', (val) => userConfig.hand.enabled = false);
+  // menu.models.addHTML('<hr style="border-style: inset; border-color: dimgray">');
+  // menu.models.addBool('gestures', userConfig.gesture, 'enabled', (val) => userConfig.gesture.enabled = val);
+  // menu.models.addHTML('<hr style="border-style: inset; border-color: dimgray">');
+  // menu.models.addBool('object detection', userConfig.object, 'enabled', (val) => userConfig.object.enabled = val);
+  // menu.models.addHTML('<hr style="border-style: inset; border-color: dimgray">');
+  // menu.models.addBool('face compare', compare, 'enabled', (val) => {
+  //   compare.enabled = val;
+  //   compare.original = null;
+  // });
 
   for (const m of Object.values(menu)) m.hide();
 
@@ -842,54 +836,54 @@ async function dragAndDrop() {
   };
 }
 
-async function drawHints() {
-  const hint = document.getElementById('hint');
-  ui.hintsThread = setInterval(() => {
-    const rnd = Math.trunc(Math.random() * hints.length);
-    hint.innerText = 'hint: ' + hints[rnd];
-    hint.style.opacity = 1;
-    setTimeout(() => {
-      hint.style.opacity = 0;
-    }, 4500);
-  }, 5000);
-}
+// async function drawHints() {
+//   const hint = document.getElementById('hint');
+//   ui.hintsThread = setInterval(() => {
+//     const rnd = Math.trunc(Math.random() * hints.length);
+//     hint.innerText = 'hint: ' + hints[rnd];
+//     hint.style.opacity = 1;
+//     setTimeout(() => {
+//       hint.style.opacity = 0;
+//     }, 4500);
+//   }, 5000);
+// }
 
-async function pwaRegister() {
-  if (!pwa.enabled) return;
-  if ('serviceWorker' in navigator) {
-    try {
-      let found;
-      const regs = await navigator.serviceWorker.getRegistrations();
-      for (const reg of regs) {
-        log('pwa found:', reg.scope);
-        if (reg.scope.startsWith(window.location.origin)) found = reg;
-      }
-      if (!found) {
-        const reg = await navigator.serviceWorker.register(pwa.scriptFile, { scope: window.location.pathname });
-        found = reg;
-        log('pwa registered:', reg.scope);
-      }
-    } catch (err) {
-      if (err.name === 'SecurityError') log('pwa: ssl certificate is untrusted');
-      else log('pwa error:', err);
-    }
-    if (navigator.serviceWorker.controller) {
-      // update pwa configuration as it doesn't have access to it
-      navigator.serviceWorker.controller.postMessage({ key: 'cacheModels', val: pwa.cacheModels });
-      navigator.serviceWorker.controller.postMessage({ key: 'cacheWASM', val: pwa.cacheWASM });
-      navigator.serviceWorker.controller.postMessage({ key: 'cacheOther', val: pwa.cacheOther });
+// async function pwaRegister() {
+//   if (!pwa.enabled) return;
+//   if ('serviceWorker' in navigator) {
+//     try {
+//       let found;
+//       const regs = await navigator.serviceWorker.getRegistrations();
+//       for (const reg of regs) {
+//         log('pwa found:', reg.scope);
+//         if (reg.scope.startsWith(window.location.origin)) found = reg;
+//       }
+//       if (!found) {
+//         const reg = await navigator.serviceWorker.register(pwa.scriptFile, { scope: window.location.pathname });
+//         found = reg;
+//         log('pwa registered:', reg.scope);
+//       }
+//     } catch (err) {
+//       if (err.name === 'SecurityError') log('pwa: ssl certificate is untrusted');
+//       else log('pwa error:', err);
+//     }
+//     if (navigator.serviceWorker.controller) {
+//       // update pwa configuration as it doesn't have access to it
+//       navigator.serviceWorker.controller.postMessage({ key: 'cacheModels', val: pwa.cacheModels });
+//       navigator.serviceWorker.controller.postMessage({ key: 'cacheWASM', val: pwa.cacheWASM });
+//       navigator.serviceWorker.controller.postMessage({ key: 'cacheOther', val: pwa.cacheOther });
 
-      log('pwa ctive:', navigator.serviceWorker.controller.scriptURL);
-      const cache = await caches.open(pwa.cacheName);
-      if (cache) {
-        const content = await cache.matchAll();
-        log('pwa cache:', content.length, 'files');
-      }
-    }
-  } else {
-    log('pwa inactive');
-  }
-}
+//       log('pwa ctive:', navigator.serviceWorker.controller.scriptURL);
+//       const cache = await caches.open(pwa.cacheName);
+//       if (cache) {
+//         const content = await cache.matchAll();
+//         log('pwa cache:', content.length, 'files');
+//       }
+//     }
+//   } else {
+//     log('pwa inactive');
+//   }
+// }
 
 async function main() {
   if (ui.exceptionHandler) {
@@ -908,7 +902,7 @@ async function main() {
 
   document.documentElement.style.setProperty('--icon-size', ui.iconSize);
 
-  drawHints();
+  // drawHints();
 
   // sanity check for webworker compatibility
   if (typeof Worker === 'undefined' || typeof OffscreenCanvas === 'undefined') {
@@ -917,7 +911,7 @@ async function main() {
   }
 
   // register PWA ServiceWorker
-  await pwaRegister();
+  // await pwaRegister();
 
   // parse url search params
   const params = new URLSearchParams(window.location.search);
