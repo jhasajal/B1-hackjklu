@@ -28,6 +28,7 @@ function samples() {
 }
 
 async function main() {
+  res.face.forEach((face) => log.info({ model, image: f, emotion: face.emotion }));
   log.configure({ inspect: { breakLength: 350 } });
   const inputs = process.argv.length > 2 ? process.argv.slice(2) : samples();
   const human = new H.Human(humanConfig);

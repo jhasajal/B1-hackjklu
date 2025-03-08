@@ -1,10 +1,6 @@
 export const defaultLabels = {
   face: `face
     confidence: [score]%
-    [gender] [genderScore]%
-    age: [age] years
-    distance: [distance]cm
-    real: [real]%
     live: [live]%
     [emotions]
     roll: [roll]° yaw:[yaw]° pitch:[pitch]°

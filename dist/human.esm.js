@@ -31825,7 +31825,7 @@ var EQt = void 0;
 function log(...msg) {
   const dt2 = /* @__PURE__ */ new Date();
   const ts2 = `${dt2.getHours().toString().padStart(2, "0")}:${dt2.getMinutes().toString().padStart(2, "0")}:${dt2.getSeconds().toString().padStart(2, "0")}.${dt2.getMilliseconds().toString().padStart(3, "0")}`;
-  if (msg) console.log(ts2, "Human:", ...msg);
+  if (msg) console.log(ts2, "Hey");
 }
 function join(folder, file) {
   const separator = folder.endsWith("/") ? "" : "/";
@@ -33561,7 +33561,7 @@ async function loadModel(modelPath) {
 }
 
 // package.json
-var version = "3.3.5";
+var version = "";
 
 // src/tfjs/humangl.ts
 var config2 = {
@@ -34021,11 +34021,11 @@ var options2 = {
   drawAttention: true,
   drawGestures: true,
   drawPolygons: true,
-  drawGaze: true,
+  // drawGaze: false,
   fillPolygons: false,
   useDepth: true,
   useCurves: false,
-  faceLabels: "",
+  faceLabels: "Sajal Jha",
   bodyLabels: "",
   bodyPartLabels: "",
   objectLabels: "",
@@ -37823,7 +37823,7 @@ function drawLabels(f, ctx) {
   if (f.score) l = replace(l, "[score]", 100 * f.score);
   if (f.gender) l = replace(l, "[gender]", f.gender);
   if (f.genderScore) l = replace(l, "[genderScore]", 100 * f.genderScore);
-  if (f.age) l = replace(l, "[age]", f.age);
+  // if (f.age) l = replace(l, "[age]", f.age);
   if (f.distance) l = replace(l, "[distance]", 100 * f.distance);
   if (f.real) l = replace(l, "[real]", 100 * f.real);
   if (f.live) l = replace(l, "[live]", 100 * f.live);
@@ -38122,17 +38122,30 @@ function gesture(inCanvas2, result, drawOptions) {
 }
 
 // src/draw/labels.ts
+// var defaultLabels = {
+//   face: `face
+//     confidence: [score]%
+//     [gender] [genderScore]%
+//     age: [age] years
+//     distance: [distance]cm
+//     real: [real]%
+//     live: [live]%
+//     [emotions]
+//     roll: [roll]\xB0 yaw:[yaw]\xB0 pitch:[pitch]\xB0
+//     gaze: [gaze]\xB0`,
+//   body: "body [score]%",
+//   bodyPart: "[label] [score]%",
+//   object: "[label] [score]%",
+//   hand: "[label] [score]%",
+//   finger: "[label]",
+//   gesture: "[where] [who]: [what]"
+// };
+
 var defaultLabels = {
   face: `face
     confidence: [score]%
-    [gender] [genderScore]%
-    age: [age] years
-    distance: [distance]cm
-    real: [real]%
     live: [live]%
-    [emotions]
-    roll: [roll]\xB0 yaw:[yaw]\xB0 pitch:[pitch]\xB0
-    gaze: [gaze]\xB0`,
+        [emotions]`,
   body: "body [score]%",
   bodyPart: "[label] [score]%",
   object: "[label] [score]%",

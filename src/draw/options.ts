@@ -34,7 +34,7 @@ export interface DrawOptions {
   /** should draw polygons from detection points? */
   drawPolygons: boolean,
   /** should draw gaze arrows? */
-  drawGaze: boolean,
+  // drawGaze: boolean,
   /** should fill polygons? */
   fillPolygons: boolean,
   /** use z-coordinate when available */
@@ -74,7 +74,7 @@ export const options: DrawOptions = {
   drawAttention: true as boolean,
   drawGestures: true as boolean,
   drawPolygons: true as boolean,
-  drawGaze: true as boolean,
+  // drawGaze: false as boolean,
   fillPolygons: false as boolean,
   useDepth: true as boolean,
   useCurves: false as boolean,
