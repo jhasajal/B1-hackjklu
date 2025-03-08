@@ -23,6 +23,11 @@
 // Newer versions of Human have richer functionality allowing for much cleaner & easier usage
 // It is recommended to use other demos such as `demo/typescript` for usage examples
 
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+const SUPABASE_URL = "https://eugmznxkrlkmiuxxxamc.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV1Z216bnhrcmxrbWl1eHh4YW1jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE0Mjk3NDcsImV4cCI6MjA1NzAwNTc0N30.-fbxn3l8evz4kwvY3BqCKtkBdPRTCV-aKlQn74W9mC8";
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 import { Human } from '../dist/human.esm.js'; // equivalent of @vladmandic/human
 import Menu from './helpers/menu.js';
 import GLBench from './helpers/gl-bench.js';
@@ -30,6 +35,26 @@ import webRTC from './helpers/webrtc.js';
 import jsonView from './helpers/jsonview.js';
 
 let human;
+
+async function insertScore(scoreData) {
+  const { data, error } = await supabase
+    .from('e_score')
+    .insert([scoreData]);
+
+  if (error) {
+    console.error('Error inserting data:', error);
+  } else {
+    console.log('Data inserted successfully:', data);
+  }
+}
+
+const scoreData = {
+  user_id: '631fc18c-02ba-4a89-905c-e512a58a6f87',
+  score: 100,
+  timestamp: new Date().toISOString()
+};
+
+
 
 let userConfig = {
   // face: { enabled: false },
@@ -63,6 +88,8 @@ let userConfig = {
   gesture: { enabled: false },
   emotion: {enabled: true},
 };
+
+
 
 const drawOptions = {
   bufferedOutput: true, // makes draw functions interpolate results between each detection for smoother movement
@@ -281,6 +308,8 @@ async function drawResults(input) {
   
   // setup database here
   logEmotions(result);
+
+
   // show tree with results
   if (ui.results) {
     const div = document.getElementById('results');
@@ -797,19 +826,51 @@ async function resize() {
   window.onresize = resize;
 }
 
-function logEmotions(result) {
+async function logEmotions(result) {
   if (result && result.face && result.face.length > 0) {
-    console.log("Emotion Data:");
-    result.face.forEach((face, i) => {
-      if (face.emotion && face.emotion.length > 0) {
-        console.log(`Face #${i+1} Emotions:`);
-        face.emotion.forEach(emotion => {
-          // Convert score to percentage and display
-          const percentage = Math.round(emotion.score * 100);
-          console.log(`  ${emotion.emotion}: ${percentage}%`);
-        });
+      console.log("Emotion Data:");
+
+      // Loop through each detected face
+      for (const face of result.face) {
+          if (face.emotion && face.emotion.length > 0) {
+              let emotionData = {
+                  user_id: "631fc18c-02ba-4a89-905c-e512a58a6f87",  // Replace with actual user ID if available
+                  angry: 0,
+                  disgust: 0,
+                  fear: 0,
+                  happy: 0,
+                  sad: 0,
+                  surprise: 0,
+                  neutral: 0,
+                  // overall_score: 0,
+                  captured_at: new Date().toISOString(),
+              };
+
+              // Store detected emotions
+              for (const emotion of face.emotion) {
+                  const percentage = Math.round(emotion.score * 100); // Convert to percentage
+                  if (emotionData.hasOwnProperty(emotion.emotion)) {
+                      emotionData[emotion.emotion] = percentage;
+                  }
+              }
+
+              // Calculate overall score (average of all emotions)
+             
+
+              console.log("Pushing data to Supabase:", emotionData);
+
+              // Push data to Supabase
+              const { data, error } = await supabase
+                  .from("e_score") // Supabase table
+                  .insert([emotionData]);
+
+              if (error) {
+                  console.error("Error inserting data:", error.message);
+              } else {
+                  console.log("Data inserted successfully:", data);
+              }
+          }
       }
-    });
   }
 }
 
