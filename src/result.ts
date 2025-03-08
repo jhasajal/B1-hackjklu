@@ -181,7 +181,7 @@ export type GestureResult =
   | { 'body': number, gesture: BodyGesture }
   | { 'hand': number, gesture: HandGesture }
 
-/** Person getter
+/** Person gegazegazetter
 * - Triggers combining all individual results into a virtual person object
 */
 export interface PersonResult {

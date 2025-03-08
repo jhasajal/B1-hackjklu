@@ -34021,10 +34021,10 @@ var options2 = {
   drawAttention: true,
   drawGestures: true,
   drawPolygons: true,
-  // drawGaze: false,
+  drawGaze: true,
   fillPolygons: false,
   useDepth: true,
-  useCurves: false,
+  useCurves: true,
   faceLabels: "Sajal Jha",
   bodyLabels: "",
   bodyPartLabels: "",
@@ -38145,7 +38145,9 @@ var defaultLabels = {
   face: `face
     confidence: [score]%
     live: [live]%
-        [emotions]`,
+        [emotions],
+    roll: [roll]\xB0 yaw:[yaw]\xB0 pitch:[pitch]\xB0
+    gaze: [gaze]\xB0`,
   body: "body [score]%",
   bodyPart: "[label] [score]%",
   object: "[label] [score]%",

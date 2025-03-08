@@ -4,11 +4,7 @@
  * @description Main demo app that exposes all Human functionality
  *
  * @params Optional URL parameters:
- * image=<imagePath:string>: perform detection on specific image and finish
- * worker=<true|false>: use WebWorkers
- * backend=<webgl|wasm|cpu>: use specific TF backend for operations
- * preload=<true|false>: pre-load all configured models
- * warmup=<true|false>: warmup all configured models
+ 1
  *
  * @example <https://wyse:10031/?backend=wasm&worker=true&image="/assets/sample-me.jpg">
  *
@@ -82,10 +78,10 @@ let userConfig = {
   // body: { enabled: true, modelPath: 'movenet-multipose.json' },
   segmentation: { enabled: false },
   */
-  face: { iris: { enabled: true }, emotion: { enabled: true}, },
+  face: { iris: { enabled: true }, emotion: { enabled: true}, gaze: { enabled: true } },
   hand: { enabled: false },
   body: { enabled: false },
-  gesture: { enabled: false },
+  gesture: { enabled: true },
   emotion: {enabled: true},
 };
 
@@ -94,7 +90,7 @@ let userConfig = {
 const drawOptions = {
   bufferedOutput: true, // makes draw functions interpolate results between each detection for smoother movement
   drawBoxes: true,
-  drawGaze: false,
+  // drawGaze: ture,
   drawLabels: true,
   drawGestures: true,
   drawPolygons: false,
@@ -160,17 +156,6 @@ const pwa = {
   cacheWASM: true,
   cacheOther: false,
 };
-
-// hints
-// const hints = [
-//   'for optimal performance disable unused modules',
-//   'with modern gpu best backend is webgl otherwise select wasm backend',
-//   'you can process images by dragging and dropping them in browser window',
-//   'video input can be webcam or any other video source',
-//   'check out other demos such as face-matching and face-3d',
-//   'you can edit input image or video on-the-fly using filters',
-//   'library status messages are logged in browser console',
-// ];
 
 // global variables
 const menu = {};
@@ -309,6 +294,7 @@ async function drawResults(input) {
   // setup database here
   logEmotions(result);
 
+  logGazeData(result);
 
   // show tree with results
   if (ui.results) {
@@ -767,7 +753,7 @@ function setupMenu() {
   menu.models = new Menu(document.body, '', { top, left: x[3] });
   menu.models.addBool('face detect', userConfig.face, 'enabled', (val) => userConfig.face.enabled = val);
   // menu.models.addBool('face mesh', userConfig.face.mesh, 'enabled', (val) => userConfig.face.mesh.enabled = val);
-  // menu.models.addBool('face iris', userConfig.face.iris, 'enabled', (val) => userConfig.face.iris.enabled = val);
+  menu.models.addBool('face iris', userConfig.face.iris, 'enabled', (val) => userConfig.face.iris.enabled = val);
   // menu.models.addBool('face description', userConfig.face.description, 'enabled', (val) => userConfig.face.description.enabled = val);
   menu.models.addBool('face emotion', userConfig.face.emotion, 'enabled', (val) => userConfig.face.emotion.enabled = val);
   // menu.models.addHTML('<hr style="border-style: inset; border-color: dimgray">');
@@ -873,6 +859,38 @@ async function logEmotions(result) {
       }
   }
 }
+
+async function logGazeData(userId, yaw, roll, pitch, pupilX, pupilY, centerX, centerY, saccadeRate) {
+  // Calculate Focus Score, Distraction Index, and Cognitive Load
+  let focusScore = Math.max(0, 1 - (Math.abs(yaw) + Math.abs(roll)) / 90);
+  let pupilShift = Math.sqrt((pupilX - centerX) ** 2 + (pupilY - centerY) ** 2);
+  let distractionIndex = (Math.abs(yaw) + Math.abs(roll) + pupilShift) / 3;
+  let cognitiveLoad = Math.min(1, (saccadeRate + Math.abs(pitch)) / 10);
+
+  // Create data object
+  const gazeData = {
+      user_id: "631fc18c-02ba-4a89-905c-e512a58a6f87",
+      focus_score: focusScore,
+      distraction_index: distractionIndex,
+      cognitive_load: cognitiveLoad,
+      captured_at: new Date().toISOString()
+  };
+
+  console.log("Pushing gaze data to Supabase:", gazeData);
+
+  // Insert data into Supabase
+  const { data, error } = await supabase
+      .from("gaze_metrics")
+      .insert([gazeData]);
+
+  if (error) {
+      console.error("Error inserting gaze data:", error.message);
+  } else {
+      console.log("Gaze data inserted successfully:", data);
+  }
+}
+
+
 
 async function drawWarmup(res) {
   const canvas = document.getElementById('canvas');
