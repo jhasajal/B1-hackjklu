@@ -395,7 +395,7 @@ async function M() {
 }
 async function q() {
   var a, n;
-  d("human version:", s.version, "| tfjs version:", s.tf.version["tfjs-core"]),
+  d("| tfjs version:", s.tf.version["tfjs-core"]),
     d(
       "options:",
       JSON.stringify(r)

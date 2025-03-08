@@ -50,7 +50,7 @@ async function main() {
   dom.composite.innerHTML = ['source-atop', 'color', 'color-burn', 'color-dodge', 'copy', 'darken', 'destination-atop', 'destination-in', 'destination-out', 'destination-over', 'difference', 'exclusion', 'hard-light', 'hue', 'lighten', 'lighter', 'luminosity', 'multiply', 'overlay', 'saturation', 'screen', 'soft-light', 'source-in', 'source-out', 'source-over', 'xor'].map((gco) => `<option value="${gco}">${gco}</option>`).join(''); // eslint-disable-line max-len
   const ctxMerge = dom.merge.getContext('2d');
 
-  log('human version:', human.version, '| tfjs version:', human.tf.version['tfjs-core']);
+  log('| tfjs version:', human.tf.version['tfjs-core']);
   log('platform:', human.env.platform, '| agent:', human.env.agent);
   await human.load(); // preload all models
   log('backend:', human.tf.getBackend(), '| available:', human.env.backends);

@@ -66,7 +66,7 @@ async function processFile(image, inFile, outFile) {
   const result = await human.detect(tensor);
   human.tf.dispose(tensor);
   log.data(`Detected: ${image}:`, 'Face:', result.face.length, 'Body:', result.body.length, 'Hand:', result.hand.length, 'Objects:', result.object.length, 'Gestures:', result.gesture.length);
-
+  console.log.data('Face:', result.face.length,);
   if (outFile) await saveFile(tensor.shape, buffer, result, outFile);
 }
 
@@ -76,7 +76,7 @@ async function main() {
   globalThis.Canvas = canvas.Canvas; // patch global namespace with canvas library
   globalThis.ImageData = canvas.ImageData; // patch global namespace with canvas library
 
-  log.info('Human:', human.version, 'TF:', tf.version_core);
+  // log.info('', human.version, 'TF:', tf.version_core);
   const configErrors = await human.validate();
   if (configErrors.length > 0) log.error('Configuration errors:', configErrors);
   await human.load(); // pre-load models

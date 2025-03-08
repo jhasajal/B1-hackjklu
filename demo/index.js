@@ -57,11 +57,11 @@ let userConfig = {
   // body: { enabled: true, modelPath: 'movenet-multipose.json' },
   segmentation: { enabled: false },
   */
-  face: { iris: { enabled: true }, emotion: { enabled: true } },
+  face: { iris: { enabled: true }, emotion: { enabled: true}, },
   hand: { enabled: false },
   body: { enabled: false },
   gesture: { enabled: false },
-  
+  emotion: {enabled: true},
 };
 
 const drawOptions = {
@@ -278,7 +278,9 @@ async function drawResults(input) {
   if (ui.interpolated) interpolated = human.next(result);
   else interpolated = result;
   human.draw.all(canvas, interpolated, drawOptions);
-
+  
+  // setup database here
+  logEmotions(result);
   // show tree with results
   if (ui.results) {
     const div = document.getElementById('results');
@@ -513,16 +515,16 @@ function runHumanDetect(input, canvas, timestamp) {
         //   if (!bench) initPerfMonitor();
         //   bench.nextFrame(timestamp);
         // }
-        if (document.getElementById('gl-bench')) document.getElementById('gl-bench').style.display = ui.bench ? 'block' : 'none';
-        if (result.error) {
-          log(result.error);
-          document.getElementById('log').innerText += `\nHuman error: ${result.error}`;
-        } else {
+        // if (document.getElementById('gl-bench')) document.getElementById('gl-bench').style.display = ui.bench ? 'block' : 'none';
+        // if (result.error) {
+        //   log(result.error);
+        //   document.getElementById('log').innerText += `\nHuman error: ${result.error}`;
+        // } else {
           lastDetectedResult = result;
           if (!ui.drawThread) drawResults(input);
           ui.framesDetect++;
           ui.detectThread = requestAnimationFrame((now) => runHumanDetect(input, canvas, now));
-        }
+        // }
         return result;
       })
       .catch(() => log('human detect error'));
@@ -555,7 +557,7 @@ async function processImage(input, title) {
       thumb.width = ui.columns > 1 ? window.innerWidth / (ui.columns + 0.1) : window.innerWidth - 14;
       thumb.height = thumb.width * canvas.height / canvas.width;
       if (result.face && result.face.length > 0) {
-        thumb.title = result.face.map((a, i) => `#${i} face: ${Math.trunc(100 * a.faceScore)}% box: ${Math.trunc(100 * a.boxScore)}% age: ${Math.trunc(a.age)} gender: ${Math.trunc(100 * a.genderScore)}% ${a.gender}`).join(' | ');
+        thumb.title = result.face.map((a, i) => `#${i} face: ${Math.trunc(100 * a.faceScore)}% box: ${Math.trunc(100 * a.boxScore)}%`).join(' | ');
       } else {
         thumb.title = 'no face detected';
       }
@@ -598,21 +600,21 @@ async function processImage(input, title) {
   });
 }
 
-async function processVideo(input, title) {
-  status(`processing video: ${title}`);
-  const video = document.getElementById('video');
-  const canvas = document.getElementById('canvas');
-  video.addEventListener('error', () => status(`video loading error: ${video.error.message}`));
-  video.addEventListener('canplay', async () => {
-    for (const m of Object.values(menu)) m.hide();
-    document.getElementById('samples-container').style.display = 'none';
-    canvas.style.display = 'block';
-    await videoPlay();
-    runHumanDetect(video, canvas);
-  });
-  video.srcObject = null;
-  video.src = input;
-}
+// async function processVideo(input, title) {
+//   status(`processing video: ${title}`);
+//   const video = document.getElementById('video');
+//   const canvas = document.getElementById('canvas');
+//   video.addEventListener('error', () => status(`video loading error: ${video.error.message}`));
+//   video.addEventListener('canplay', async () => {
+//     for (const m of Object.values(menu)) m.hide();
+//     document.getElementById('samples-container').style.display = 'none';
+//     canvas.style.display = 'block';
+//     await videoPlay();
+//     runHumanDetect(video, canvas);
+//   });
+//   video.srcObject = null;
+//   video.src = input;
+// }
 
 // just initialize everything and call main function
 async function detectVideo() {
@@ -697,7 +699,7 @@ function setupMenu() {
   // menu.image.addBool('kodachrome', userConfig.filter, 'kodachrome', (val) => userConfig.filter.kodachrome = val);
   // menu.image.addBool('technicolor', userConfig.filter, 'technicolor', (val) => userConfig.filter.technicolor = val);
   // menu.image.addBool('polaroid', userConfig.filter, 'polaroid', (val) => userConfig.filter.polaroid = val);
-  menu.image.addHTML('<input type="file" id="file-input" class="input-file"></input> &nbsp input');
+  // menu.image.addHTML('<input type="file" id="file-input" class="input-file"></input> &nbsp input');
 
   menu.process = new Menu(document.body, '', { top, left: x[2] });
   // menu.process.addList('backend', ['cpu', 'webgl', 'wasm', 'humangl'], userConfig.backend, (val) => userConfig.backend = val);
@@ -795,6 +797,22 @@ async function resize() {
   window.onresize = resize;
 }
 
+function logEmotions(result) {
+  if (result && result.face && result.face.length > 0) {
+    console.log("Emotion Data:");
+    result.face.forEach((face, i) => {
+      if (face.emotion && face.emotion.length > 0) {
+        console.log(`Face #${i+1} Emotions:`);
+        face.emotion.forEach(emotion => {
+          // Convert score to percentage and display
+          const percentage = Math.round(emotion.score * 100);
+          console.log(`  ${emotion.emotion}: ${percentage}%`);
+        });
+      }
+    });
+  }
+}
+
 async function drawWarmup(res) {
   const canvas = document.getElementById('canvas');
   canvas.width = res.canvas.width;
@@ -804,37 +822,37 @@ async function drawWarmup(res) {
   await human.draw.all(canvas, res, drawOptions);
 }
 
-async function processDataURL(f, action) {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      if (action === 'process') {
-        if (e.target.result.startsWith('data:image')) await processImage(e.target.result, f.name);
-        if (e.target.result.startsWith('data:video')) await processVideo(e.target.result, f.name);
-        document.getElementById('canvas').style.display = 'none';
-      }
-      resolve(true);
-    };
-    reader.readAsDataURL(f);
-  });
-}
+// async function processDataURL(f, action) {
+//   return new Promise((resolve) => {
+//     const reader = new FileReader();
+//     reader.onload = async (e) => {
+//       if (action === 'process') {
+//         if (e.target.result.startsWith('data:image')) await processImage(e.target.result, f.name);
+//         if (e.target.result.startsWith('data:video')) await processVideo(e.target.result, f.name);
+//         document.getElementById('canvas').style.display = 'none';
+//       }
+//       resolve(true);
+//     };
+//     reader.readAsDataURL(f);
+//   });
+// }
 
-async function dragAndDrop() {
-  document.body.addEventListener('dragenter', (evt) => evt.preventDefault());
-  document.body.addEventListener('dragleave', (evt) => evt.preventDefault());
-  document.body.addEventListener('dragover', (evt) => evt.preventDefault());
-  document.body.addEventListener('drop', async (evt) => {
-    evt.preventDefault();
-    evt.dataTransfer.dropEffect = 'copy';
-    if (evt.dataTransfer.files.length < 2) ui.columns = 1;
-    for (const f of evt.dataTransfer.files) await processDataURL(f, 'process');
-  });
-  document.getElementById('file-input').onchange = async (evt) => {
-    evt.preventDefault();
-    if (evt.target.files.length < 2) ui.columns = 1;
-    for (const f of evt.target.files) await processDataURL(f, 'process');
-  };
-}
+// async function dragAndDrop() {
+//   document.body.addEventListener('dragenter', (evt) => evt.preventDefault());
+//   document.body.addEventListener('dragleave', (evt) => evt.preventDefault());
+//   document.body.addEventListener('dragover', (evt) => evt.preventDefault());
+//   document.body.addEventListener('drop', async (evt) => {
+//     evt.preventDefault();
+//     evt.dataTransfer.dropEffect = 'copy';
+//     if (evt.dataTransfer.files.length < 2) ui.columns = 1;
+//     for (const f of evt.dataTransfer.files) await processDataURL(f, 'process');
+//   });
+//   document.getElementById('file-input').onchange = async (evt) => {
+//     evt.preventDefault();
+//     if (evt.target.files.length < 2) ui.columns = 1;
+//     for (const f of evt.target.files) await processDataURL(f, 'process');
+//   };
+// }
 
 // async function drawHints() {
 //   const hint = document.getElementById('hint');
@@ -953,7 +971,7 @@ async function main() {
   human = new Human(userConfig);
   // human.env.perfadd = true;
 
-  log('human version:', human.version);
+  // log('human version:', human.version);
   // we've merged human defaults with user config and now lets store it back so it can be accessed by methods such as menu
   userConfig = human.config;
   if (typeof tf !== 'undefined') {
@@ -991,7 +1009,7 @@ async function main() {
   document.getElementById('results').style.display = 'none';
 
   // init drag & drop
-  await dragAndDrop();
+  // await dragAndDrop();
 
   if (params.has('image')) {
     try {
